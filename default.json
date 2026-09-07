@@ -1,0 +1,81 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommitTypeAll(chore)"
+  ],
+  "description": [
+    "Shared dependency policy for every repository here. They are Rust and Nix",
+    "projects, some of them Tauri desktop apps with a Svelte frontend, so one",
+    "policy covers cargo, npm, GitHub Actions and the Nix flake.",
+    "Renovate replaced Dependabot because Dependabot has no Nix ecosystem,",
+    "which left flake.lock as the only part of the toolchain with no",
+    "automation behind it. Dependabot's security updates stay enabled in each",
+    "repository's settings: they are a separate track this file does not",
+    "affect.",
+    "Nothing is merged automatically.",
+    "minimumReleaseAge is a quarantine: it refuses any release younger than a",
+    "week, the window in which a compromised package is normally spotted and",
+    "yanked. Where a repository sets pnpm's own minimumReleaseAge, this",
+    "complements it: pnpm enforces that one over the whole tree including",
+    "transitive packages.",
+    "The Nix manager is beta and has to be enabled by hand, and",
+    "lockFileMaintenance is what actually refreshes flake.lock; without it",
+    "only the inputs written in flake.nix would move.",
+    "src-tauri/gen holds the Android project Tauri generates. It is rewritten",
+    "from scratch rather than maintained, so a bot updating its Gradle files",
+    "proposes changes the next generation discards."
+  ],
+  "timezone": "Etc/UTC",
+  "schedule": ["before 6am on monday"],
+  "labels": ["maintenance"],
+  "dependencyDashboard": true,
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "src-tauri/gen/**"
+  ],
+  "minimumReleaseAge": "7 days",
+  "nix": {
+    "enabled": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "packageRules": [
+    {
+      "description": "Majors are never grouped and wait longer: a breaking change must not hold back the rest, and it gets its own pull request to be judged on its own.",
+      "matchUpdateTypes": ["major"],
+      "minimumReleaseAge": "30 days"
+    },
+    {
+      "description": "Routine cargo updates arrive together.",
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "cargo"
+    },
+    {
+      "description": "Routine frontend updates arrive together.",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "ui-svelte"
+    },
+    {
+      "description": "Workflow actions arrive together.",
+      "matchManagers": ["github-actions"],
+      "groupName": "actions"
+    },
+    {
+      "description": "flake.lock moves all its inputs at once; splitting them would only produce pull requests that cannot be evaluated apart.",
+      "matchManagers": ["nix"],
+      "groupName": "nix"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "description": "An advisory that affects us is not quarantined and does not wait for Monday.",
+    "minimumReleaseAge": null,
+    "schedule": ["at any time"],
+    "labels": ["maintenance", "security"]
+  }
+}
